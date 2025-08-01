@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  python-compiler:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - FLASK_ENV=production
+    restart: unless-stopped
+    
+  # Additional service to pre-pull common Python images
+  image-preloader:
+    image: python:3.9-slim
+    command: python --version
+    profiles:
+      - setup

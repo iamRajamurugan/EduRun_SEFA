@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Docker Compiler - Python, C++ & JavaScript</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .output {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .success {
+            color: #28a745;
+        }
+        .loading {
+            display: none;
+        }
+        .language-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
+        .code-container {
+            position: relative;
+        }
+        #codeEditor {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="text-center mb-4">🐳 Unified Docker Compiler</h1>
+        <p class="text-center text-muted">Compile and run Python, C++ and JavaScript code using Docker containers</p>
+        
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>Code Editor</h5>
+                        <div>
+                            <select id="languageSelect" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                                <option value="auto">Auto-detect</option>
+                                <option value="python">Python</option>
+                                <option value="cpp">C++</option>
+                                <option value="js">JavaScript</option>
+                            </select>
+                            <span id="detectedLanguage" class="badge bg-info ms-2" style="display: none;"></span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="code-container">
+                            <textarea id="codeEditor" class="form-control" rows="15" placeholder="Enter your Python, C++ or JavaScript code here...">console.log("Hello, World!");</textarea>
+                            <span id="languageBadge" class="badge bg-warning language-badge">JavaScript</span>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <button id="runBtn" class="btn btn-primary">
+                                <span class="loading spinner-border spinner-border-sm me-2" role="status"></span>
+                                🚀 Run Code
+                            </button>
+                            <button id="checkBtn" class="btn btn-secondary ms-2">
+                                <span class="loading spinner-border spinner-border-sm me-2" role="status"></span>
+                                ✅ Check Syntax
+                            </button>
+                            <button id="clearBtn" class="btn btn-outline-danger ms-2">🗑️ Clear</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Output</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="output" class="output">Ready to compile and run your code...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6>🐍 Python Examples</h6>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-sm btn-outline-primary mb-2 example-btn" data-lang="python" data-example="hello">Hello World</button>
+                        <button class="btn btn-sm btn-outline-primary mb-2 example-btn" data-lang="python" data-example="syntax">Syntax Error</button>
+                        <button class="btn btn-sm btn-outline-primary mb-2 example-btn" data-lang="python" data-example="complex">Complex Example</button>
+                        <button class="btn btn-sm btn-outline-primary mb-2 example-btn" data-lang="python" data-example="runtime">Runtime Error</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6>⚡ C++ Examples</h6>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-sm btn-outline-success mb-2 example-btn" data-lang="cpp" data-example="hello">Hello World</button>
+                        <button class="btn btn-sm btn-outline-success mb-2 example-btn" data-lang="cpp" data-example="syntax">Syntax Error</button>
+                        <button class="btn btn-sm btn-outline-success mb-2 example-btn" data-lang="cpp" data-example="complex">Complex Example</button>
+                        <button class="btn btn-sm btn-outline-success mb-2 example-btn" data-lang="cpp" data-example="runtime">Runtime Error</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6>🟨 JavaScript Examples</h6>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-sm btn-outline-warning mb-2 example-btn" data-lang="js" data-example="hello">Hello World</button>
+                        <button class="btn btn-sm btn-outline-warning mb-2 example-btn" data-lang="js" data-example="syntax">Syntax Error</button>
+                        <button class="btn btn-sm btn-outline-warning mb-2 example-btn" data-lang="js" data-example="complex">Complex Example</button>
+                        <button class="btn btn-sm btn-outline-warning mb-2 example-btn" data-lang="js" data-example="runtime">Runtime Error</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const codeEditor = document.getElementById('codeEditor');
+        const runBtn = document.getElementById('runBtn');
+        const checkBtn = document.getElementById('checkBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const output = document.getElementById('output');
+        const languageSelect = document.getElementById('languageSelect');
+        const languageBadge = document.getElementById('languageBadge');
+        const detectedLanguage = document.getElementById('detectedLanguage');
+
+        // Example code snippets
+        const examples = {
+            python: {
+                hello: 'print("Hello, World from Python!")\nprint("🐍 Python is awesome!")',
+                syntax: 'print("This will cause a syntax error"\nprint("Missing closing quote and parenthesis"',
+                complex: `# Complex Python example
+import math
+import time
+
+def fibonacci(n):
+    """Calculate fibonacci number"""
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+def prime_check(num):
+    """Check if number is prime"""
+    if num < 2:
+        return False
+    for i in range(2, int(math.sqrt(num)) + 1):
+        if num % i == 0:
+            return False
+    return True
+
+# Main execution
+numbers = [5, 10, 15]
+print("Fibonacci and Prime Check Results:")
+print("-" * 40)
+
+for num in numbers:
+    fib = fibonacci(num)
+    is_prime = prime_check(fib)
+    print(f"fibonacci({num}) = {fib}, is_prime = {is_prime}")
+
+print(f"\\nCalculation completed at: {time.strftime('%Y-%m-%d %H:%M:%S')}")`,
+                runtime: `# This will cause a runtime error
+numbers = [1, 2, 3, 4, 5]
+print("Accessing elements:")
+for i in range(10):  # This will go out of bounds
+    print(f"numbers[{i}] = {numbers[i]}")`
+            },
+            cpp: {
+                hello: `#include <iostream>
+using namespace std;
+
+int main() {
+    cout << "Hello, World from C++!" << endl;
+    cout << "⚡ C++ is fast!" << endl;
+    return 0;
+}`,
+                syntax: `#include <iostream>
+using namespace std;
+
+int main() {
+    cout << "This will cause a syntax error" << endl
+    cout << "Missing semicolon above" << endl;
+    return 0;
+}`,
+                complex: `#include <iostream>
+#include <vector>
+#include <cmath>
+#include <iomanip>
+using namespace std;
+
+class FibonacciCalculator {
+public:
+    static long long calculate(int n) {
+        if (n <= 1) return n;
+        return calculate(n-1) + calculate(n-2);
+    }
+};
+
+bool isPrime(long long num) {
+    if (num < 2) return false;
+    for (long long i = 2; i <= sqrt(num); i++) {
+        if (num % i == 0) return false;
+    }
+    return true;
+}
+
+int main() {
+    vector<int> numbers = {5, 10, 15, 20};
+    
+    cout << "Fibonacci and Prime Check Results:" << endl;
+    cout << string(40, '-') << endl;
+    
+    for (int num : numbers) {
+        long long fib = FibonacciCalculator::calculate(num);
+        bool prime = isPrime(fib);
+        
+        cout << "fibonacci(" << num << ") = " << fib 
+             << ", is_prime = " << (prime ? "true" : "false") << endl;
+    }
+    
+    cout << "\\nC++ calculation completed successfully!" << endl;
+    return 0;
+}`,
+                runtime: `#include <iostream>
+#include <vector>
+using namespace std;
+
+int main() {
+    vector<int> numbers = {1, 2, 3, 4, 5};
+    
+    cout << "Accessing elements:" << endl;
+    for (int i = 0; i < 10; i++) {  // This will go out of bounds
+        cout << "numbers[" << i << "] = " << numbers[i] << endl;
+    }
+    
+    return 0;
+}`
+            },
+            js: {
+                hello: `console.log("Hello, World from JavaScript!");
+console.log("🟨 JavaScript is dynamic!");
+
+const message = "JavaScript in Docker!";
+console.log(\`Dynamic message: \${message}\`);
+
+const numbers = [1, 2, 3, 4, 5];
+const sum = numbers.reduce((acc, num) => acc + num, 0);
+console.log(\`Sum of [\${numbers.join(", ")}] = \${sum}\`);`,
+                syntax: `console.log("This will cause a syntax error");
+
+const obj = {
+    name: "test",
+    value: 42
+    // Missing closing brace
+
+console.log("This line will never be reached");`,
+                complex: `// JavaScript Complex Example - Modern Features
+console.log("JavaScript Complex Example");
+console.log("=".repeat(40));
+
+class DataProcessor {
+    constructor(name) {
+        this.name = name;
+        this.data = [];
+    }
+    
+    addData(items) {
+        this.data.push(...items);
+        return this;
+    }
+    
+    process() {
+        return this.data
+            .filter(x => x > 0)
+            .map(x => x * 2)
+            .reduce((sum, x) => sum + x, 0);
+    }
+}
+
+async function demo() {
+    const processor = new DataProcessor("Demo");
+    processor.addData([1, -2, 3, 4, -5, 6]);
+    
+    console.log(\`Raw data: [\${processor.data.join(", ")}]\`);
+    const result = processor.process();
+    console.log(\`Processed result: \${result}\`);
+    
+    // Modern JS features
+    const [first, ...rest] = processor.data;
+    console.log(\`First: \${first}, Rest: [\${rest.join(", ")}]\`);
+}
+
+demo().then(() => console.log("✅ Demo completed!"));`,
+                runtime: `console.log("JavaScript Runtime Error Example");
+console.log("Trying to access undefined variable:");
+
+// This will cause a ReferenceError
+console.log(undefinedVariable);
+
+// This line won't be reached
+console.log("This should not execute");`
+            }
+        };
+
+        function detectLanguage(code) {
+            const cppIndicators = [
+                '#include <iostream>', '#include<iostream>', 'std::cout', 'std::cin', 
+                'std::endl', 'int main()', 'int main(', 'using namespace std',
+                '#include <vector>', '#include <string>', 'cout <<', 'cin >>'
+            ];
+            
+            const jsIndicators = [
+                'console.log(', 'console.error(', 'function(', 'const ', 'let ', 'var ',
+                '=>', 'require(', 'module.exports', 'document.', 'window.', 'alert(',
+                'settimeout(', 'setinterval('
+            ];
+            
+            const pythonIndicators = [
+                'print(', 'import ', 'from ', 'def ', 'if __name__ == "__main__"',
+                'input(', 'len(', 'range(', 'str(', 'int(', 'float('
+            ];
+            
+            const codeLower = code.toLowerCase();
+            let cppScore = cppIndicators.filter(indicator => codeLower.includes(indicator)).length;
+            let jsScore = jsIndicators.filter(indicator => codeLower.includes(indicator)).length;
+            let pythonScore = pythonIndicators.filter(indicator => codeLower.includes(indicator)).length;
+            
+            // Additional pattern checks
+            if (cppScore === 0 && jsScore === 0 && pythonScore === 0) {
+                if (code.includes('{') && code.includes('}') && code.includes(';')) {
+                    // Could be C++ or JavaScript
+                    if (codeLower.includes('main(')) {
+                        cppScore += 2;
+                    } else {
+                        jsScore += 1;
+                    }
+                }
+                if (code.includes(':') && !code.includes(';')) {
+                    pythonScore += 1;
+                }
+            }
+            
+            // Return the language with highest score
+            const scores = {cpp: cppScore, js: jsScore, python: pythonScore};
+            return Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+        }
+
+        function updateLanguageBadge() {
+            const selectedLang = languageSelect.value;
+            const code = codeEditor.value;
+            
+            if (selectedLang === 'auto') {
+                const detected = detectLanguage(code);
+                let displayName, badgeClass;
+                
+                if (detected === 'cpp') {
+                    displayName = 'C++';
+                    badgeClass = 'bg-success';
+                } else if (detected === 'js') {
+                    displayName = 'JavaScript';
+                    badgeClass = 'bg-warning';
+                } else {
+                    displayName = 'Python';
+                    badgeClass = 'bg-primary';
+                }
+                
+                languageBadge.textContent = displayName;
+                languageBadge.className = `badge language-badge ${badgeClass}`;
+                detectedLanguage.textContent = `Detected: ${displayName}`;
+                detectedLanguage.style.display = 'inline';
+            } else {
+                let displayName, badgeClass;
+                
+                if (selectedLang === 'cpp') {
+                    displayName = 'C++';
+                    badgeClass = 'bg-success';
+                } else if (selectedLang === 'js') {
+                    displayName = 'JavaScript';
+                    badgeClass = 'bg-warning';
+                } else {
+                    displayName = 'Python';
+                    badgeClass = 'bg-primary';
+                }
+                
+                languageBadge.textContent = displayName;
+                languageBadge.className = `badge language-badge ${badgeClass}`;
+                detectedLanguage.style.display = 'none';
+            }
+        }
+
+        // Update language badge when content changes
+        codeEditor.addEventListener('input', updateLanguageBadge);
+        languageSelect.addEventListener('change', updateLanguageBadge);
+
+        // Initialize
+        updateLanguageBadge();
+
+        async function compileCode(syntaxOnly = false) {
+            const code = codeEditor.value.trim();
+            if (!code) {
+                output.innerHTML = '<span class="error">Please enter some code to compile.</span>';
+                return;
+            }
+
+            // Show loading state
+            const button = syntaxOnly ? checkBtn : runBtn;
+            const loadingSpinner = button.querySelector('.loading');
+            loadingSpinner.style.display = 'inline-block';
+            button.disabled = true;
+
+            try {
+                const selectedLang = languageSelect.value;
+                const requestData = {
+                    code: code,
+                    syntax_only: syntaxOnly,
+                    timeout: 30
+                };
+
+                // Add language if not auto-detect
+                if (selectedLang !== 'auto') {
+                    requestData.language = selectedLang;
+                }
+
+                const response = await fetch('/compile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                const result = await response.json();
+                displayResult(result);
+            } catch (error) {
+                output.innerHTML = `<span class="error">Network error: ${error.message}</span>`;
+            } finally {
+                // Hide loading state
+                loadingSpinner.style.display = 'none';
+                button.disabled = false;
+            }
+        }
+
+        function displayResult(result) {
+            let html = '';
+            
+            if (result.success) {
+                html += `<span class="success">✅ Compilation successful!</span>\\n`;
+                html += `<strong>Language:</strong> ${result.language}\\n`;
+                if (result.execution_time) {
+                    html += `<strong>Execution time:</strong> ${result.execution_time.toFixed(3)}s\\n`;
+                }
+                html += `<strong>Output:</strong>\\n${result.output || '(no output)'}`;
+            } else {
+                html += `<span class="error">❌ Compilation failed</span>\\n`;
+                html += `<strong>Language:</strong> ${result.language}\\n`;
+                if (result.error) {
+                    html += `<strong>Error:</strong>\\n${result.error}`;
+                }
+                if (result.output) {
+                    html += `\\n<strong>Output:</strong>\\n${result.output}`;
+                }
+            }
+
+            output.innerHTML = html;
+        }
+
+        // Event listeners
+        runBtn.addEventListener('click', () => compileCode(false));
+        checkBtn.addEventListener('click', () => compileCode(true));
+        clearBtn.addEventListener('click', () => {
+            codeEditor.value = '';
+            output.innerHTML = 'Ready to compile and run your code...';
+            updateLanguageBadge();
+        });
+
+        // Example buttons
+        document.querySelectorAll('.example-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const lang = btn.dataset.lang;
+                const example = btn.dataset.example;
+                codeEditor.value = examples[lang][example];
+                languageSelect.value = lang;
+                updateLanguageBadge();
+                output.innerHTML = 'Ready to compile and run your code...';
+            });
+        });
+
+        // Keyboard shortcuts
+        codeEditor.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                compileCode(false);
+            }
+            if (e.ctrlKey && e.shiftKey && e.key === 'Enter') {
+                e.preventDefault();
+                compileCode(true);
+            }
+        });
+    </script>
+</body>
+</html>

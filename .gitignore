@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+.venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.local
+.env.production.local
+
+# React build (included in repo for Railway)
+# edurun-ai-code-buddy-76/dist/
+
+# Test files
+test_*.html
+test_*.py
+
+# Railway
+.railway/

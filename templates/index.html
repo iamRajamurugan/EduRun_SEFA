@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Docker Compiler</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .editor-section {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        #code-editor {
+            width: 100%;
+            height: 300px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+            background-color: #f8f8f8;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #1e7e34;
+        }
+        
+        .options {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        input[type="number"] {
+            width: 80px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        
+        .output-section {
+            margin-top: 30px;
+        }
+        
+        #output {
+            background-color: #1e1e1e;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 2px solid #333;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            color: #007bff;
+            font-style: italic;
+            margin: 20px 0;
+        }
+        
+        .status-bar {
+            background-color: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .error {
+            border-left-color: #dc3545 !important;
+            background-color: #f8d7da;
+        }
+        
+        .success {
+            border-left-color: #28a745 !important;
+            background-color: #d4edda;
+        }
+        
+        .example-buttons {
+            margin: 20px 0;
+        }
+        
+        .example-btn {
+            margin: 5px;
+            padding: 8px 16px;
+            background-color: #e9ecef;
+            border: 1px solid #adb5bd;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .example-btn:hover {
+            background-color: #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐍 Python Docker Compiler</h1>
+        
+        <div class="status-bar" id="status-bar">
+            Ready to compile Python code using Docker
+        </div>
+        
+        <div class="editor-section">
+            <label for="code-editor">Python Code:</label>
+            <textarea id="code-editor" placeholder="Enter your Python code here...">print("Hello, World!")
+print("Python Docker Compiler is working!")
+
+# Example code
+import sys
+print(f"Python version: {sys.version}")
+
+# Simple calculation
+result = 2 + 2
+print(f"2 + 2 = {result}")
+</textarea>
+        </div>
+        
+        <div class="example-buttons">
+            <strong>Quick Examples:</strong><br>
+            <button class="example-btn" onclick="loadExample('hello')">Hello World</button>
+            <button class="example-btn" onclick="loadExample('math')">Math Operations</button>
+            <button class="example-btn" onclick="loadExample('error')">Syntax Error</button>
+            <button class="example-btn" onclick="loadExample('runtime')">Runtime Error</button>
+        </div>
+        
+        <div class="controls">
+            <button class="btn-primary" onclick="compileCode(false)">🚀 Run Code</button>
+            <button class="btn-secondary" onclick="compileCode(true)">🔍 Check Syntax</button>
+            <button class="btn-success" onclick="clearOutput()">🗑️ Clear Output</button>
+            
+            <div class="options">
+                <label>
+                    Timeout:
+                    <input type="number" id="timeout" value="30" min="5" max="300"> seconds
+                </label>
+            </div>
+        </div>
+        
+        <div class="loading" id="loading">
+            ⏳ Compiling and running code...
+        </div>
+        
+        <div class="output-section">
+            <label for="output">Output:</label>
+            <div id="output">Click "Run Code" to see the output here...</div>
+        </div>
+    </div>
+
+    <script>
+        const examples = {
+            hello: `print("Hello, World!")
+print("Welcome to Python Docker Compiler!")`,
+            
+            math: `# Mathematical operations
+import math
+
+numbers = [1, 2, 3, 4, 5]
+print(f"Numbers: {numbers}")
+print(f"Sum: {sum(numbers)}")
+print(f"Average: {sum(numbers) / len(numbers)}")
+print(f"Square root of 16: {math.sqrt(16)}")`,
+            
+            error: `# This code has a syntax error
+print("Hello World"
+print("Missing closing parenthesis")`,
+            
+            runtime: `# This code will cause a runtime error
+print("This will work fine")
+result = 10 / 0  # Division by zero error
+print("This won't be printed")`
+        };
+
+        function loadExample(type) {
+            const editor = document.getElementById('code-editor');
+            editor.value = examples[type];
+        }
+
+        function compileCode(syntaxOnly = false) {
+            const code = document.getElementById('code-editor').value;
+            const timeout = parseInt(document.getElementById('timeout').value);
+            const loadingDiv = document.getElementById('loading');
+            const outputDiv = document.getElementById('output');
+            const statusBar = document.getElementById('status-bar');
+            
+            if (!code.trim()) {
+                alert('Please enter some Python code to compile.');
+                return;
+            }
+            
+            // Show loading
+            loadingDiv.style.display = 'block';
+            outputDiv.textContent = 'Compiling...';
+            
+            // Update status
+            statusBar.textContent = syntaxOnly ? 'Checking syntax...' : 'Compiling and running code...';
+            statusBar.className = 'status-bar';
+            
+            // Make API request
+            fetch('/compile', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    code: code,
+                    syntax_only: syntaxOnly,
+                    timeout: timeout
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingDiv.style.display = 'none';
+                
+                if (data.formatted_output) {
+                    outputDiv.textContent = data.formatted_output;
+                } else {
+                    outputDiv.textContent = data.error || 'Unknown error occurred';
+                }
+                
+                // Update status bar
+                if (data.success) {
+                    statusBar.textContent = syntaxOnly ? 'Syntax check passed!' : 'Code executed successfully!';
+                    statusBar.className = 'status-bar success';
+                } else {
+                    statusBar.textContent = syntaxOnly ? 'Syntax errors found' : 'Execution failed';
+                    statusBar.className = 'status-bar error';
+                }
+            })
+            .catch(error => {
+                loadingDiv.style.display = 'none';
+                outputDiv.textContent = `Network error: ${error.message}`;
+                statusBar.textContent = 'Connection error';
+                statusBar.className = 'status-bar error';
+            });
+        }
+        
+        function clearOutput() {
+            document.getElementById('output').textContent = 'Output cleared. Click "Run Code" to see new results...';
+            const statusBar = document.getElementById('status-bar');
+            statusBar.textContent = 'Ready to compile Python code using Docker';
+            statusBar.className = 'status-bar';
+        }
+        
+        // Allow Ctrl+Enter to run code
+        document.getElementById('code-editor').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                compileCode(false);
+            }
+        });
+    </script>
+</body>
+</html>
